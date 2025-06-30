@@ -6,7 +6,7 @@ import os
 import time
 from sqlalchemy.exc import OperationalError
 
-# 데이터베이스 연결 URL을 환경 변수에서 가져오거나 기본값을 사용합니다
+# 데이터베이스 연결 URL을 환경 변수에서 가져오거나 기본값을 사용합니다 
 # 기본값: MySQL 데이터베이스에 대한 연결 정보
 DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:1234@localhost:3306/study")
 

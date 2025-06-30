@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>산책로 목록</title>
+</head>
+<body>
+    <h1>산책로 목록</h1>
+    <a href="/">메인으로</a>
+    <ul>
+        {% for trail in trails %}
+        <li>
+            <a href="/trails/{{ trail.id }}">{{ trail.name }}</a> ({{ trail.location }}, {{ trail.distance_km }}km)
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html> 

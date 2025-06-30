@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum, Float, Text
 from sqlalchemy.orm import relationship
 from .database import Base
 import enum
@@ -61,3 +61,60 @@ class Reservation(Base):
 
     # Facility 모델과의 관계 설정 (N:1)
     facility = relationship("Facility", back_populates="reservations") 
+    
+class Badge(Base):
+    __tablename__ = "badges"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(50), nullable=False)
+    description = Column(String(200))
+    image_url = Column(String(255))
+
+import enum
+class TrailType(enum.Enum):
+    RIVER = "RIVER"
+    PARK = "PARK"
+    FOREST = "FOREST"
+    CITY = "CITY"
+    ETC = "ETC"
+
+class Trail(Base):
+    __tablename__ = "trails"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    type = Column(Enum(TrailType), nullable=False)
+    location = Column(String(200), nullable=False)
+    distance_km = Column(Float, nullable=False)
+    description = Column(Text)
+    image_url = Column(String(255))
+    reviews = relationship("TrailReview", back_populates="trail")
+    walk_records = relationship("WalkRecord", back_populates="trail")
+    
+class TrailReview(Base):
+    __tablename__ = "trail_reviews"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    trail_id = Column(Integer, ForeignKey("trails.id"))
+    rating = Column(Integer, nullable=False)
+    comment = Column(Text)
+    created_at = Column(DateTime)
+    user = relationship("User", back_populates="reviews")
+    trail = relationship("Trail", back_populates="reviews")
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(50), unique=True, nullable=False)
+    password = Column(String(128), nullable=False)
+    walk_records = relationship("WalkRecord", back_populates="user")
+    reviews = relationship("TrailReview", back_populates="user")
+    
+class WalkRecord(Base):
+    __tablename__ = "walk_records"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    trail_id = Column(Integer, ForeignKey("trails.id"))
+    walked_at = Column(DateTime)
+    memo = Column(Text)
+    photo_url = Column(String(255))
+    user = relationship("User", back_populates="walk_records")
+    trail = relationship("Trail", back_populates="walk_records")

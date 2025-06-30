@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>통계 대시보드</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', 'Malgun Gothic', Arial, sans-serif;
+            background: #f7faff;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 400px;
+            margin: 60px auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            padding: 32px 24px 24px 24px;
+            text-align: center;
+        }
+        h1 {
+            color: #2563eb;
+            margin-bottom: 28px;
+            font-size: 2em;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 24px 0;
+        }
+        li {
+            font-size: 1.15em;
+            margin-bottom: 16px;
+            background: #e8f0fe;
+            border-radius: 8px;
+            padding: 12px 0;
+            color: #222;
+        }
+        a {
+            display: inline-block;
+            margin-top: 12px;
+            text-decoration: none;
+            color: #2563eb;
+            font-weight: bold;
+            border: 1px solid #2563eb;
+            border-radius: 6px;
+            padding: 8px 18px;
+            transition: background 0.2s, color 0.2s;
+        }
+        a:hover {
+            background: #2563eb;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>통계 대시보드</h1>
+        <ul>
+            <li>전체 산책로 수: <strong>{{ trail_count }}</strong></li>
+            <li>전체 산책 기록 수: <strong>{{ record_count }}</strong></li>
+            <li>전체 사용자 수: <strong>{{ user_count }}</strong></li>
+        </ul>
+        <a href="/">메인으로</a>
+    </div>
+</body>
+</html> 

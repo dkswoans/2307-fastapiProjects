@@ -1,41 +1,32 @@
 version: '3.8'
 
 services:
-  web:
-    build: .
-    ports:
-      - "8000:8000"
-    volumes:
-      - .:/app
-    depends_on:
-      db:
-        condition: service_healthy
-    environment:
-      - DATABASE_URL=mysql+pymysql://user:password@db:3306/facility_db
-    networks:
-      - app-network
-
   db:
     image: mysql:8.0
-    ports:
-      - "3308:3306"
+    restart: always
     environment:
-      - MYSQL_ROOT_PASSWORD=rootpassword
-      - MYSQL_DATABASE=facility_db
-      - MYSQL_USER=user
-      - MYSQL_PASSWORD=password
+      MYSQL_DATABASE: walkdb
+      MYSQL_USER: walkuser
+      MYSQL_PASSWORD: walkpass
+      MYSQL_ROOT_PASSWORD: rootpass
+    ports:
+      - "3306:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "user", "-ppassword"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - db_data:/var/lib/mysql
+  web:
+    build: .
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: mysql+mysqldb://walkuser:walkpass@db:3306/walkdb
 
 volumes:
-  mysql_data:
+  db_data:
 
 networks:
   app-network:

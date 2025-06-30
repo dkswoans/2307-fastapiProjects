@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ trail.name }} 상세</title>
+</head>
+<body>
+    <h1>{{ trail.name }}</h1>
+    <p>위치: {{ trail.location }}</p>
+    <p>거리: {{ trail.distance_km }}km</p>
+    <p>설명: {{ trail.description }}</p>
+    {% if trail.image_url %}
+    <img src="{{ trail.image_url }}" alt="{{ trail.name }} 사진" width="400"/>
+    {% endif %}
+    <a href="/trails/">목록으로</a>
+</body>
+</html> 

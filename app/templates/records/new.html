@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>산책 기록 추가</title>
+</head>
+<body>
+    <h1>산책 기록 추가</h1>
+    <form method="post">
+        <label>산책로:
+            <select name="trail_id">
+                {% for trail in trails %}
+                <option value="{{ trail.id }}">{{ trail.name }}</option>
+                {% endfor %}
+            </select>
+        </label><br>
+        <label>메모: <input type="text" name="memo"></label><br>
+        <button type="submit">기록 추가</button>
+    </form>
+    <a href="/records/">기록 목록으로</a>
+</body>
+</html> 

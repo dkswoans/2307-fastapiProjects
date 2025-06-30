@@ -2,13 +2,14 @@
 from fastapi import FastAPI, Request, Depends
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from database import get_db, create_engine, get_engine
-from app import models
-from app.routers import facilities, reservations
+from .database import engine, get_db
+from . import models
+from .routers import trails, records, users, reservations
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 # FastAPI 애플리케이션 인스턴스 생성
-app = FastAPI(title="공공시설 예약 시스템")
+app = FastAPI(title="도시 산책로 추천 및 기록 서비스")
 
 # 애플리케이션 시작 시 데이터베이스 테이블 자동 생성
 models.Base.metadata.create_all(bind=engine)
@@ -22,68 +23,65 @@ templates = Jinja2Templates(directory="app/templates")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # 기능별 라우터 등록
-app.include_router(facilities.router)  # 시설 관련 라우터
-app.include_router(reservations.router)  # 예약 관련 라우터
-
-def init_db(db: Session):
-    """
-    데이터베이스 초기화 함수
-    시설 데이터가 없는 경우 기본 데이터를 추가합니다
-    """
-    # 시설 데이터 존재 여부 확인
-    facilities = db.query(models.Facility).first()
-    if not facilities:
-        # 기본 시설 데이터 정의
-        default_facilities = [
-            models.Facility(
-                name="종합체육관",
-                type=models.FacilityType.SPORTS,
-                location="서울시 강남구 테헤란로 123",
-                capacity=100,
-                description="다목적 체육시설로 농구장, 배구장, 배드민턴장이 구비되어 있습니다."
-            ),
-            models.Facility(
-                name="중앙도서관",
-                type=models.FacilityType.LIBRARY,
-                location="서울시 서초구 서초대로 456",
-                capacity=200,
-                description="3층 규모의 종합 도서관으로 열람실, 세미나실이 구비되어 있습니다."
-            ),
-            models.Facility(
-                name="주민센터",
-                type=models.FacilityType.COMMUNITY_CENTER,
-                location="서울시 송파구 올림픽로 789",
-                capacity=50,
-                description="다목적 강당과 회의실이 구비된 주민센터입니다."
-            )
-        ]
-        # 기본 데이터를 데이터베이스에 추가
-        db.add_all(default_facilities)
-        db.commit()
-        print("기본 시설 데이터가 추가되었습니다.")
-
-@app.on_event("startup")
-async def startup_event():
-    """
-    애플리케이션 시작 시 실행되는 이벤트 핸들러
-    데이터베이스 초기화를 수행합니다
-    """
-    db = SessionLocal()
-    try:
-        init_db(db)
-    finally:
-        db.close()
+app.include_router(trails.router)
+app.include_router(records.router)
+app.include_router(users.router)
+app.include_router(reservations.router)
 
 @app.get("/")
-async def home(request: Request, db: Session = Depends(get_db)):
-    """
-    메인 페이지 라우트 핸들러
-    모든 시설 정보를 조회하여 메인 페이지를 렌더링합니다
-    """
-    # 모든 시설 정보 조회
-    facilities = db.query(models.Facility).all()
-    # index.html 템플릿을 사용하여 응답 생성
-    return templates.TemplateResponse("index.html", {
+def home(request: Request, db: Session = Depends(get_db)):
+    trails = db.query(models.Trail).all()
+    return templates.TemplateResponse("index.html", {"request": request, "trails": trails})
+
+@app.get("/dashboard")
+def dashboard(request: Request, db: Session = Depends(get_db)):
+    # 예시: 전체 산책로 수, 전체 산책 기록 수, 전체 사용자 수
+    trail_count = db.query(models.Trail).count()
+    record_count = db.query(models.WalkRecord).count() if hasattr(models, 'WalkRecord') else 0
+    user_count = db.query(models.User).count()
+    return templates.TemplateResponse("dashboard.html", {
         "request": request,
-        "facilities": facilities
-    }) 
+        "trail_count": trail_count,
+        "record_count": record_count,
+        "user_count": user_count    
+    })
+
+@app.on_event("startup")
+def startup_event():
+    db = next(get_db())
+    # 기본 사용자 생성 (id=1)
+    if not db.query(models.User).filter_by(id=1).first():
+        user = models.User(id=1, username="testuser", password="testpass")
+        db.add(user)
+        db.commit()
+    # 기본 산책로 데이터
+    if not db.query(models.Trail).first():
+        default_trails = [
+            models.Trail(
+                name="한강공원 산책로",
+                type=models.TrailType.RIVER,
+                location="서울특별시 영등포구",
+                distance_km=5.2,
+                description="한강을 따라 걷는 대표적인 산책로.",
+                image_url="https://images.unsplash.com/photo-1506744038136-46273834b3fb"
+            ),
+            models.Trail(
+                name="서울숲 산책로",
+                type=models.TrailType.PARK,
+                location="서울특별시 성동구",
+                distance_km=3.1,
+                description="도심 속 자연을 느낄 수 있는 산책로.",
+                image_url="https://images.unsplash.com/photo-1465101046530-73398c7f28ca"
+            ),
+            models.Trail(
+                name="북한산 둘레길",
+                type=models.TrailType.FOREST,
+                location="서울특별시 은평구",
+                distance_km=7.8,
+                description="산림욕과 함께 걷기 좋은 숲길.",
+                image_url="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429"
+            )
+        ]
+        db.add_all(default_trails)
+        db.commit()
+        db.close()

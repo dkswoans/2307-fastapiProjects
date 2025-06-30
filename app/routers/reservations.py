@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Form
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from .. import models, schemas
 from ..database import get_db
 from fastapi.templating import Jinja2Templates
 from datetime import datetime
+from fastapi.responses import RedirectResponse
 
 router = APIRouter(
-    prefix="/reservations",
+prefix="/reservations",
     tags=["reservations"]
 )
 
@@ -57,7 +58,7 @@ async def edit_reservation(
         {"request": request, "reservation": reservation}
     )
 
-@router.get("/", response_model=List[schemas.Reservation])
+@router.get("/")
 def get_reservations(
     request: Request,
     skip: int = 0,
@@ -74,30 +75,35 @@ def get_reservations(
         {"request": request, "reservations": reservations}
     )
 
-@router.post("/", response_model=schemas.Reservation)
-def create_reservation(reservation: schemas.ReservationCreate, db: Session = Depends(get_db)):
-    """
-    새로운 예약을 생성하는 엔드포인트
-    시설 존재 여부와 시간 중복을 확인하고 예약을 생성합니다
-    """
-    facility = db.query(models.Facility).filter(models.Facility.id == reservation.facility_id).first()
-    if not facility:
-        raise HTTPException(status_code=404, detail="Facility not found")
-    
-    existing_reservation = db.query(models.Reservation).filter(
+@router.post("/new")
+async def create_reservation(
+    request: Request,
+    reservation: schemas.ReservationCreate,  # JSON body로 받음
+    db: Session = Depends(get_db)
+):
+    # 시간 중복 체크
+    existing = db.query(models.Reservation).filter(
         models.Reservation.facility_id == reservation.facility_id,
         models.Reservation.start_time <= reservation.end_time,
         models.Reservation.end_time >= reservation.start_time
     ).first()
-    
-    if existing_reservation:
-        raise HTTPException(status_code=400, detail="Time slot already reserved")
-    
-    db_reservation = models.Reservation(**reservation.dict())
-    db.add(db_reservation)
+    if existing:
+        return templates.TemplateResponse(
+            "reservations/new.html",
+            {"request": request, "error": "이미 해당 시간에 예약이 있습니다.", "facility": None, "facilities": db.query(models.Facility).all()}
+        )
+    new_reservation = models.Reservation(
+        facility_id=reservation.facility_id,
+        user_name=reservation.user_name,
+        user_phone=reservation.user_phone,
+        start_time=reservation.start_time,
+        end_time=reservation.end_time,
+        purpose=reservation.purpose,
+        capacity=reservation.capacity
+    )
+    db.add(new_reservation)
     db.commit()
-    db.refresh(db_reservation)
-    return db_reservation
+    return RedirectResponse("/reservations", status_code=303)
 
 @router.get("/{reservation_id}", response_model=schemas.Reservation)
 def get_reservation(reservation_id: int, db: Session = Depends(get_db)):

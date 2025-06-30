@@ -1,5 +1,5 @@
 # SQLAlchemy 관련 모듈들을 임포트합니다
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
@@ -8,7 +8,7 @@ from sqlalchemy.exc import OperationalError
 
 # 데이터베이스 연결 URL을 환경 변수에서 가져오거나 기본값을 사용합니다
 # 기본값: MySQL 데이터베이스에 대한 연결 정보
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://user:password@db:3306/facility_db")
+DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:1234@localhost:3306/study")
 
 def get_engine():
     """
@@ -21,10 +21,10 @@ def get_engine():
     for attempt in range(max_retries):
         try:
             # SQLAlchemy 엔진 생성
-            engine = create_engine(SQLALCHEMY_DATABASE_URL)
+            engine = create_engine(DATABASE_URL, pool_pre_ping=True)
             # 연결 테스트를 위한 간단한 쿼리 실행
             with engine.connect() as connection:
-                connection.execute("SELECT 1")
+                connection.execute(text("SELECT 1"))
             return engine
         except OperationalError as e:
             if attempt == max_retries - 1:

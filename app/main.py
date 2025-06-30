@@ -2,7 +2,7 @@
 from fastapi import FastAPI, Request, Depends
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from app.database import engine, SessionLocal, get_db
+from database import get_db, create_engine, get_engine
 from app import models
 from app.routers import facilities, reservations
 from sqlalchemy.orm import Session
